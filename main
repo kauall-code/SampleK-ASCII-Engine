@@ -1,0 +1,110 @@
+
+# SampleK Engine
+# Version 0.16
+
+import renderer
+import world
+import entities
+import input_handler
+import hud
+import time
+
+
+def main():
+
+    # Carrega o mundo
+    world_grid = world.load_map()
+
+    height = len(world_grid)
+    width = len(world_grid[0])
+
+    # Cria entidades
+    player = entities.create_entity(1, 1, "@")
+    coin = entities.create_entity(3, 5, "$")
+    enemy = entities.create_entity(10, 7, "E")
+
+    entity_list = [player, coin, enemy]
+
+    # Estatísticas
+    hp = 3
+    max_hp = 3
+    score = 0
+    items = 0
+
+    # Console de eventos
+    sound_events = ["[SYS] SampleK initialized"]
+
+    # Limpa entradas antigas do teclado
+    while input_handler.get_key() is not None:
+        pass
+
+    # Inicializa terminal
+    print("\033[2J\033[H", end="", flush=True)
+
+    # Loop principal
+    while True:
+
+        # Captura de teclado
+        key = input_handler.get_key()
+
+        if key is not None:
+
+            new_x = player["x"]
+            new_y = player["y"]
+
+            if key == b'w':
+                new_y -= 1
+            elif key == b's':
+                new_y += 1
+            elif key == b'a':
+                new_x -= 1
+            elif key == b'd':
+                new_x += 1
+            elif key == b'q':
+                break
+
+            # Verifica limites
+            if 0 <= new_x < width and 0 <= new_y < height:
+
+                # Verifica paredes
+                if world_grid[new_y][new_x] != "#":
+
+                    # Verifica outras entidades
+                    target = entities.entity_at(
+                        entity_list,
+                        new_x,
+                        new_y,
+                        ignore=player
+                    )
+
+                    if target is None:
+
+                        player["x"] = new_x
+                        player["y"] = new_y
+
+                        sound_events.append("[SFX] Footstep")
+                        sound_events = sound_events[-3:]
+
+        # Combina mundo e entidades
+        frame = entities.compose(world_grid, entity_list)
+
+        # Desenha o mapa
+        renderer.render(frame)
+
+        # Atualiza interface
+        hud.draw(
+            height,
+            sound_events,
+            hp,
+            max_hp,
+            score,
+            items,
+            player["x"],
+            player["y"]
+        )
+
+        time.sleep(0.05)
+
+
+if __name__ == "__main__":
+    main()
